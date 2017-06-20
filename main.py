@@ -38,6 +38,8 @@ p=None
 q=None
 
 
+
+
 #测试最相似用户
 # 返回指定用户k个最近邻
 def imgNearestMat(user_item_mat,userID,k=10,sim=si.cosine_distance):

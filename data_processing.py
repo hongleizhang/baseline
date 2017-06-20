@@ -13,21 +13,23 @@ import matplotlib.pyplot as plt
 import scipy.io as sio
 import scipy.sparse as ss
 from sklearn.cross_validation import train_test_split as tts
-from collections import defaultdict
+# from collections import defaultdict
 
 from utils import log_to_cmd
 """
 	数据处理相关类
 	包括数据读取，保存
 """
+
 #从txt文件中读取数据，返回DataFrame,Matrix,Array格式
 def read_data(file_path, file_type='txt', sep='\t', header=None, return_format='DataFrame'):
 	"""
 	加载数据文件，返回指定类型 
+	@@zhanghonglei
 
 	Args:
 		file_path: 数据文件存放路径
-		file_type: 数据文件格式txt,csv
+		file_type: 数据文件格式csv,dat,txt,json
 		sep: 分隔字符串'\t',','
 		header: 数据文件标题，0-表示从第1行开始，None-表示数据文件中无标题
 		return_format: 返回的数据类型，返回DataFrame,Matrix,Array格式
@@ -38,8 +40,13 @@ def read_data(file_path, file_type='txt', sep='\t', header=None, return_format='
 	"""
 	if file_type == 'csv' or file_type == 'dat':
 		data=pd.read_csv(file_path, sep=sep, header=header)
-	if file_type == 'txt':
+	elif file_type == 'txt':
 		data=pd.read_table(file_path, sep=sep, header=header)
+	elif file_type =='json': #读取后缀名为.json的文件,默认返回dataframe格式；若不加lines=True的话，会报Trailing data的错误
+		data=pd.read_json(file_path,lines=True)
+	else:
+		print('暂不支持此文件类型')
+
 	if return_format == 'Matrix':
 		data=np.mat(data)
 	if return_format == 'Array':
@@ -69,23 +76,13 @@ def frame_to_nmat(data,row_num,column_num):
 
 #将DataFrame格式的数据转换为以user为键值和以item为键值的字典
 def get_user_item_dict(data):
-	user_items=defaultdict(list)
-	# item_users=defaultdict(set)
+	user_items=defaultdict(set)
+	item_users=defaultdict(set)
 	for index,row in data.iterrows():
-		user, item = str(data.ix[index, 0]), str(data.ix[index, 1])
-		if user==1:
-			print user
-		user_items[user].append(item)
-		# item_users[item].add(user)
-	return user_items
-
-#将user_items转换为数组-word2vec所用格式
-def get_user_item_array(user_items):
-	arrays=[]
-	for user in user_items.iterkeys():
-		arrays.append(user_items[user])
-	return arrays
-
+		user, item = data.ix[index, 0], data.ix[index, 1]
+		user_items[user].add(item)
+		item_users[item].add(user)
+	return user_items,item_users
 
 #将整个数据集分割为训练集与测试集
 def train_test_split(data, train_size=0.7, test_size=0.3, random_state=0):
@@ -112,3 +109,8 @@ def read_data_from_disk(filename):
 	data=sio.mmread(filename)
 	return data
 
+def write_data(value,filename='default.csv'):
+	data=pd.DataFrame(value)
+	columns=list(data.columns)
+	print(columns)
+	data.to_csv(filename,columns=columns,index=False,index_label=False)
